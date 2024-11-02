@@ -27,7 +27,9 @@ dotnet add package DUWENINK.ConfigManagerHelper
 
 ## 🎮 如何使用
 
-### 1️⃣ 注册服务
+### 方式一：依赖注入（推荐）
+
+#### 1️⃣ 注册服务
 
 ```csharp
 services.Configure<ConfigManagerOptions>(options =>
@@ -42,7 +44,7 @@ services.Configure<ConfigManagerOptions>(options =>
 services.AddScoped<IConfigManager, ConfigManager>();
 ```
 
-### 2️⃣ 定义你的配置类
+#### 2️⃣ 定义你的配置类
 
 ```csharp
 public class GameConfig
@@ -53,7 +55,7 @@ public class GameConfig
 }
 ```
 
-### 3️⃣ 使用配置管理器
+#### 3️⃣ 使用配置管理器
 
 ```csharp
 public class GameService
@@ -85,6 +87,52 @@ public class GameService
 }
 ```
 
+### 方式二：直接使用（简单快速）
+
+如果你的项目不使用依赖注入，或者想要更简单的使用方式，可以这样做：
+
+```csharp
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+// 创建日志工厂（可选，如果不需要日志可以传null）
+using var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddConsole();
+});
+var logger = loggerFactory.CreateLogger<ConfigManager>();
+
+// 创建配置选项
+var options = new ConfigManagerOptions
+{
+    ConfigPath = "Configs",  // 自定义配置文件路径
+    JsonSerializerOptions = new JsonSerializerOptions 
+    { 
+        WriteIndented = true 
+    }
+};
+
+// 创建ConfigManager实例
+var configManager = new ConfigManager(
+    Options.Create(options),
+    logger
+);
+
+// 使用配置管理器
+var myConfig = new MyConfig 
+{ 
+    Setting1 = "值1",
+    Setting2 = 42
+};
+
+// 保存配置
+await configManager.SaveConfigAsync(myConfig);
+
+// 读取配置
+var loadedConfig = await configManager.GetConfigAsync<MyConfig>();
+Console.WriteLine($"设置1: {loadedConfig.Setting1}");
+```
+
 ## 🎯 为什么选择它？
 
 - 😎 超级简单的 API，开箱即用
@@ -106,6 +154,7 @@ public class GameService
 - 配置文件默认保存为 JSON 格式
 - 默认配置文件路径在应用程序目录下的 ConfigurationFiles 文件夹
 - 配置文件名默认使用配置类的名称（例如：GameConfig.json）
+- 如果不需要日志功能，可以在创建 ConfigManager 时传入 null 作为 logger 参数
 
 ## 🎉 开源协议
 
